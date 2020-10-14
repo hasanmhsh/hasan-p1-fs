@@ -5,7 +5,7 @@
 import json
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import Flask, render_template, request, Response, flash, redirect, url_for, jsonify
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 import logging
@@ -112,28 +112,50 @@ def index():
 def venues():
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
-    "city": "San Francisco",
-    "state": "CA",
-    "venues": [{
-      "id": 1,
-      "name": "The Musical Hop",
-      "num_upcoming_shows": 0,
-    }, {
-      "id": 3,
-      "name": "Park Square Live Music & Coffee",
-      "num_upcoming_shows": 1,
-    }]
-  }, {
-    "city": "New York",
-    "state": "NY",
-    "venues": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }]
-  return render_template('pages/venues.html', areas=data);
+  body = []
+  cities = db.session.query(Venue.city,Venue.state).group_by(Venue.city,Venue.state).all()
+  # return jsonify(cities)
+  for city in cities:
+    body_item = {}
+    body_item['city'] = city.city
+    body_item["state"] = city.state
+    body_item["venues"] = []
+    # return jsonify(body_item)
+    venues_per_city = Venue.query.filter(Venue.city==city.city)
+    for venue in venues_per_city:
+      number_of_artists_per_venue = len(Venue.query.get(venue.id).artists)
+      body_item["venues"].append({
+        "id": venue.id,
+        "name": venue.name,
+        "num_upcoming_shows": number_of_artists_per_venue
+      })
+    body.append(body_item)
+
+
+
+  # data=[{
+  #   "city": "San Francisco",
+  #   "state": "CA",
+  #   "venues": [{
+  #     "id": 1,
+  #     "name": "The Musical Hop",
+  #     "num_upcoming_shows": 0,
+  #   }, {
+  #     "id": 3,
+  #     "name": "Park Square Live Music & Coffee",
+  #     "num_upcoming_shows": 1,
+  #   }]
+  # }, {
+  #   "city": "New York",
+  #   "state": "NY",
+  #   "venues": [{
+  #     "id": 2,
+  #     "name": "The Dueling Pianos Bar",
+  #     "num_upcoming_shows": 0,
+  #   }]
+  # }]
+  # return jsonify(body)
+  return render_template('pages/venues.html', areas=body)
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
