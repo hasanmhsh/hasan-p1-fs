@@ -50,6 +50,10 @@ class Venue(db.Model):
       backref=db.backref('Artist', lazy=True))
     genres = db.relationship('VenueGenre', backref='venue', lazy=True)
 
+    def __repr__(self):
+      return f'<Todo {self.id} {self.name}>'
+    
+
 
 class VenueGenre(db.Model):
   __tablename__= 'venue_genres'
@@ -162,15 +166,32 @@ def search_venues():
   # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
   # seach for Hop should return "The Musical Hop".
   # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
-  response={
-    "count": 1,
-    "data": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }
-  return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
+  # return jsonify({ "word":request.form['search_term']})
+  part = request.form['search_term']
+  search = "%{}%".format(part)
+  # result = Venue.query.all()
+  result = Venue.query.filter(Venue.name.like(search)).all()
+  body = {}
+  body["count"] = len(result)
+  data = []
+  for venue in result:
+    data.append({
+      "id": venue.id,
+      "name": venue.name,
+      "num_upcoming_shows": len(Venue.query.get(venue.id).artists)
+    })
+  body['data'] = data
+  # return(result)
+  # return jsonify(body)
+  # response={
+  #   "count": 1,
+  #   "data": [{
+  #     "id": 2,
+  #     "name": "The Dueling Pianos Bar",
+  #     "num_upcoming_shows": 0,
+  #   }]
+  # }
+  return render_template('pages/search_venues.html', results=body, search_term=request.form.get('search_term', ''))
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
