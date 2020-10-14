@@ -13,6 +13,7 @@ from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
+from sqlalchemy import Column, Integer, TIMESTAMP
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -28,6 +29,12 @@ migrate = Migrate(app, db)
 # Models.
 #----------------------------------------------------------------------------#
 
+shows = db.Table('shows',
+    db.Column('venue_id', db.Integer, db.ForeignKey('Venue.id'), primary_key=True),
+    db.Column('artist_id', db.Integer, db.ForeignKey('Artist.id'), primary_key=True),
+    db.Column('datetimestamp', db.TIMESTAMP, nullable=False, server_default=db.func.now(), onupdate=db.func.now())
+)
+
 class Venue(db.Model):
     __tablename__ = 'Venue'
 
@@ -39,6 +46,16 @@ class Venue(db.Model):
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    artists = db.relationship('Artist', secondary=shows,
+      backref=db.backref('Artist', lazy=True))
+    genres = db.relationship('VenueGenre', backref='venue', lazy=True)
+
+
+class VenueGenre(db.Model):
+  __tablename__= 'venue_genres'
+  id = db.Column(db.Integer, primary_key=True)
+  name = db.Column(db.String(), nullable=False)
+  venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), nullable=False)
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -50,9 +67,16 @@ class Artist(db.Model):
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    genres = db.relationship('ArtistGenre', backref='artist', lazy=True)
+
+
+class ArtistGenre(db.Model):
+  __tablename__= 'artist_genres'
+  id = db.Column(db.Integer, primary_key=True)
+  name = db.Column(db.String(), nullable=False)
+  artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=False)
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
