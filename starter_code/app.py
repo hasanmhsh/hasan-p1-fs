@@ -222,7 +222,7 @@ def show_venue(venue_id):
     "upcoming_shows_count": len(upcomming_shows),
   }
 
- return render_template('pages/show_venue.html', venue=data)
+  return render_template('pages/show_venue.html', venue=data)
 
 #  Create Venue
 #  ----------------------------------------------------------------
@@ -290,7 +290,13 @@ def delete_venue(venue_id):
 #  ----------------------------------------------------------------
 @app.route('/artists')
 def artists():
-  data = db.session.query(Artist.name).all()
+  artists = Artist.query.all()
+  data = []
+  for artist in artists:
+    data.append({
+    "id": artist.id,
+    "name": artist.name,
+    })
   return render_template('pages/artists.html', artists=data)
 
 @app.route('/artists/search', methods=['POST'])
@@ -362,7 +368,6 @@ def show_artist(artist_id):
     "past_shows_count": len(past_shows),
     "upcoming_shows_count": len(upcomming_shows),
   }
-
   return render_template('pages/show_artist.html', artist=data)
 
 #  Update
@@ -523,7 +528,7 @@ def create_artist_submission():
 
 @app.route('/shows')
 def shows():
- shows = db.session.query(Show).all()
+  shows = db.session.query(Show).all()
   data = []
   for show in shows:
     show_time = show.datetimestamp_frontend
